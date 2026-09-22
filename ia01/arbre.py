@@ -28,18 +28,10 @@ def coupe(X: list[list], y: list, d: int, s: float) -> tuple[list[list], list, l
     """
     assert (isinstance(d, int) and d >= 0), "Le paramètre `d` doit être un entier positif."
 
-    X_inf, y_inf, X_sup, y_sup = [], [], [], []
-    
-    for i in range(len(X)):
-        x = X[i]
-        yi = y[i]
-        if x[d] <= s:
-            X_inf.append(x)
-            y_inf.append(yi)
-        else:
-            X_sup.append(x)
-            y_sup.append(yi)
-    
+    X_inf = [xi for xi in X if xi[d] <= s]
+    y_inf = [yi for (xi, yi) in zip(X, y) if xi[d] <= s]
+    X_sup = [xi for xi in X if xi[d] > s]
+    y_sup = [yi for (xi, yi) in zip(X, y) if xi[d] > s]
     return X_inf, y_inf, X_sup, y_sup
 
 
@@ -65,13 +57,11 @@ def score_coupe(X: list[list], y: list, d: int, s: float, reg: bool) -> float:
         Score résultant de la coupe        
     """
     
-    X_inf, y_inf, X_sup, y_sup = coupe(X, y, d, s)
-    
-    n_inf, n_sup = len(X_inf), len(X_sup)
-    
-    score_val = (n_inf*score(y_inf, reg) + n_sup*score(y_sup, reg)) / (n_inf+n_sup)
-    
-    return score_val
+    _, y_inf, _, y_sup = coupe(X, y, d, s)
+    n_inf = len(y_inf)
+    n_sup = len(y_sup)
+    n = n_inf + n_sup
+    return n_inf / n * score(y_inf, reg) + n_sup / n * score(y_sup, reg)
 
 
 def seuil_coupe(X: list[list], d: int) -> list:
@@ -91,11 +81,8 @@ def seuil_coupe(X: list[list], d: int) -> list:
     """
     assert (isinstance(d, int) and d >= 0), "Le paramètre `d` doit être un entier positif."
 
-    x = sorted(list(set([vecteur[d] for vecteur in X])))
-    
-    seuils = [(x[i] + x[i+1]) / 2 for i in range(len(x) - 1)]
-    
-    return seuils
+    xd = sorted(list(set([x[d] for x in X])))
+    return [(xd[i] + xd[i+1]) / 2 for i in range(len(xd)-1)]
 
 
 
@@ -122,18 +109,23 @@ def meilleure_coupe(X: list[list], y: list, reg: bool) -> tuple[int, float, list
         Partitionnement résultant de la coupe
     """
 
-    D = len(X[0])
-    best_seuil, best_dim, best_score = 0, 0, 1e10
-    for d in range(D):
-        liste_seuils = seuil_coupe(X, d)
-        for s in liste_seuils:
-            score_d_s = score_coupe(X, y, d, s, reg)
-            if score_d_s <= best_score:
-                best_seuil, best_dim, best_score = s, d, score_d_s
-    
+    dim = len(X[0])
+    # Initialisation
+    best_dim = 0
+    best_seuil = -float("inf")
+    best_score = score(y, reg)
+    # Iteration sur chaque dimension
+    for d in range(dim):
+        seuils = seuil_coupe(X, d)
+        # Iteration sur les seuils
+        for s in seuils:
+            sc = score_coupe(X, y, d, s, reg)
+            if sc < best_score:
+                best_score = sc
+                best_dim = d
+                best_seuil = s
     X_inf, y_inf, X_sup, y_sup = coupe(X, y, best_dim, best_seuil)
-    
-    return (best_dim, best_seuil, X_inf, y_inf, X_sup, y_sup)
+    return best_dim, best_seuil, X_inf, y_inf, X_sup, y_sup
 
 
 

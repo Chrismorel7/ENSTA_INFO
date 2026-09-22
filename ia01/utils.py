@@ -17,9 +17,15 @@ def compte(y: list[int | str]) -> dict[int | str, int]:
     nombre : dict(int | str, int)
         nombre[x] donne le nombre d'occurrence de l'élément x dans la liste y
     """
-    nombre: dict[int | str, int] = {}
-    for element in y:
-        nombre[element] = nombre.get(element, 0) + 1
+    label = []
+    for i in range(len(y)):
+        if y[i] not in label:
+            label.append(y[i])
+    nombre = dict()
+    for k in range(len(label)):
+        nombre[label[k]] = 0
+    for i in range(len(y)):
+        nombre[y[i]] += 1
     return nombre
 
 
@@ -69,10 +75,7 @@ def moyenne(y: list[float]) -> float:
     moy : float
         Moyenne des valeurs de la liste y
     """
-    N, s = len(y), 0
-    for e in y:
-        s += e
-    return s / N
+    return sum(y) / len(y)
 
 
 def gini(y: list) -> float:
@@ -88,13 +91,9 @@ def gini(y: list) -> float:
     g : float
         Impureté de Gini
     """
-    g = 1
-    C = set(y)
-    for i in C:
-        pi = len([x for x in y if x == i]) / len(y)
-        g -= pi**2
-    
-    return g
+    c = compte(y)
+    n = len(y)
+    return 1 - sum([(ci/n) ** 2 for ci in c.values()])
 
 
 def variance(x: list[float]) -> float:
@@ -110,12 +109,8 @@ def variance(x: list[float]) -> float:
     v : float
         Variance
     """
-    
-    E = moyenne(x)
-    v = 0
-    for i in range(len(x)):
-        v += (x[i] - E)**2
-    return v / len(x)
+    x_moy = moyenne(x)
+    return moyenne([(xi - x_moy) ** 2 for xi in x]))
 
 
 def ecart_type(x: list[float]) -> float:
@@ -172,15 +167,7 @@ def normalisation(X: list[list], loc: list[float], scale: list[float]) -> list[l
         Liste des vecteurs normalisés
     """
     
-    Xnorm = []
-    for i in range(len(X)):
-        xnormi = []
-        for j in range(len(X[i])):
-            xj = (X[i][j] - loc[j]) / scale[j]
-            xnormi.append(xj)
-        Xnorm.append(xnormi)
-    
-    return Xnorm
+    return [[(xij - l) / s for xij, l, s in zip(xi, loc, scale)] for xi in X]
 
 
 def norm_param(X: list[list], methode: str = "echelle") -> tuple[list[float], list[float]]:
@@ -203,18 +190,12 @@ def norm_param(X: list[list], methode: str = "echelle") -> tuple[list[float], li
     
     loc, scale = [], []
     
+    d = len(X[0])
     if methode == "echelle":
-        for j in range(len(X[0])):
-            colonne = [vecteur[j] for vecteur in X]
-            mini = min(colonne)
-            maxi = max(colonne)
-            loc.append(mini)
-            scale.append(maxi - mini)
-    
+        loc = [min([xi[j] for xi in X]) for j in range(d)]
+        scale = [max([xi[j] for xi in X]) - min([xi[j] for xi in X]) for j in range(d)]
     else:
-        for j in range(len(X[0])):
-            colonne = [vecteur[j] for vecteur in X]
-            loc.append(moyenne(colonne))
-            scale.append(ecart_type(colonne))
-    
+        loc = [moyenne([xi[j] for xi in X]) for j in range(d)]
+        scale = [ecart_type([xi[j] for xi in X]) for j in range(d)]
+
     return loc, scale

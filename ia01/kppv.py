@@ -23,12 +23,9 @@ def distance2(x1: list[float], x2: list[float], p: float = 2) -> float:
     d = len(x1)
     
     if p < float("inf"):
-        s = 0
-        for i in range(d):
-            s += abs(x1[i] - x2[i])**p
-        return s**(1/p)
+        return sum([abs(x1i - x2i) ** p for x1i, x2i in zip(x1, x2)]) ** (1/p)
     else:
-        return max([abs(x1[i] - x2[i]) for i in range(d)])
+        return max([abs(x1i - x2i) for x1i, x2i in zip(x1, x2)])
 
 
 def distance(x: list[float], X_train: list[list], p: float = 2) -> list[float]:
@@ -51,10 +48,7 @@ def distance(x: list[float], X_train: list[list], p: float = 2) -> list[float]:
         Distances entre x et tous les éléments de X_train
     """
 
-    dist = []
-    for i in range(len(X_train)):
-        dist.append(distance2(x, X_train[i], p))
-    return dist
+    return [distance2(x, xi, p) for xi in X_train]
 
 
 def kppv(X: list[list], X_train: list[list], y_train: list, k: int, p: float = 2, reg: bool = False, pond: bool = False) -> list:
@@ -84,17 +78,9 @@ def kppv(X: list[list], X_train: list[list], y_train: list, k: int, p: float = 2
 
     assert isinstance(k, int) and k > 0, "k doit être un entier strictement positif"
 
-    N = len(X)
-    Dist = [distance(x, X_train, p) for x in X]
     y_pred = []
-
-    for i in range(N):
-        index_i = argsort(Dist[i])[:k]
-        liste_voisins = [y_train[j] for j in index_i]
-        distance_voisins = [Dist[i][j] for j in index_i]
-        if pond:
-            y_pred.append(vote_majoritaire(liste_voisins, reg, pond=True, distance=distance_voisins))
-        else :
-            y_pred.append(vote_majoritaire(liste_voisins, reg))
-    
+    for xi in X:
+        dist = distance(xi, X_train, p)
+        idx = argsort(dist)
+        y_pred.append(vote_majoritaire([y_train[idx[j]] for j in range(k)], reg))
     return y_pred
