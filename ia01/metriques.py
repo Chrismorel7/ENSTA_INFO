@@ -119,8 +119,9 @@ def f_score(y_true: list, y_pred: list, label_pos: int | str, beta: float = 1) -
     """
     prec = precision(y_true, y_pred, label_pos)
     rap = rappel(y_true, y_pred, label_pos)
-    if prec == rappel and rappel == 0: return 0
-    else: return ((1 + beta**2)*(prec * rap)) / (beta**2 * prec + rap)
+    denominateur = beta**2 * prec + rap
+    if denominateur == 0: return 0
+    else: return ((1 + beta**2)*(prec * rap)) / denominateur
 
 def matrice_confusion(y_true: list, y_pred: list, labels: list) -> list[list]:
     """Matrice de confusion
@@ -147,3 +148,61 @@ def matrice_confusion(y_true: list, y_pred: list, labels: list) -> list[list]:
         j = labels.index(y_pred[k])
         Mat[i][j] += 1
     return Mat
+
+def TPR(y_true, y_pred, label_pos):
+    return rappel(y_true, y_pred, label_pos)
+
+def FPR(y_true, y_pred, label_pos):
+    """Taux de faux positifs, False Positive Rate
+
+    Paramètres
+    ----------
+    y_true : list
+        Liste contenant les vraies valeurs
+    y_pred : list
+        Liste contenant les valeurs prédites par un classifieur
+    label_pos :
+        Label de la classe considérée comme positive
+
+    Sorties
+    -------
+    fpr : float [0,1]
+        fpr = FP / (VN + FP)
+        Si VN + FP = 0, alors fpr = 0
+    """
+    FP = sum(1 for vrai, pred in zip(y_true, y_pred) if vrai != label_pos and pred == label_pos)
+    VN = sum(1 for vrai, pred in zip(y_true, y_pred) if vrai != label_pos and pred != label_pos)
+    if VN + FP == 0: return 0
+    else: return FP / (VN+FP)
+
+
+def ROC(y_true, s_pred, label_pos, seuils):
+    """Receiver Operating Characteristic
+
+    Paramètres
+    ----------
+    y_true : list
+        Liste contenant les vraies valeurs
+    s_pred : list
+        Liste contenant les scores de prédiction
+    label_pos :
+        Label de la classe considérée comme positive
+    seuils : list
+        Liste de seuils de prédiction, la classe positive est prédite si s_pred >= seuils
+
+    Sorties
+    -------
+    tpr, fpr : list
+        Liste des TPR/FPR pour les différentes valeurs du seuil
+    """
+    N = len(y_true)
+    list_tpr = []
+    list_fpr = []
+    for s in seuils:
+        y_pred_s = [0] * N
+        for i in range(N):
+            if s_pred[i] >= s:
+                y_pred_s[i] = 1
+        list_tpr.append(round(TPR(y_true, y_pred_s, label_pos),3))
+        list_fpr.append(round(FPR(y_true, y_pred_s, label_pos),3))
+    return list_tpr, list_fpr
