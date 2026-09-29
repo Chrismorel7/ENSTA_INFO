@@ -10,12 +10,9 @@ random.shuffle(data)
 X = [[d["longueur"], d["poids"]] for d in data]
 y = [d["espece"] for d in data]
 
-
-X_train, y_train = X[:160], y[:160]
-X_test, y_test = X[160:], y[160:]
-
-#X_train, y_train = X, y
-#X_test, y_test = X, y
+# Pas de séparation train/test : on entraîne et teste sur le même jeu de données.
+X_train, y_train = X, y
+X_test, y_test = X, y
 
 loc_echelle, scale_echelle = norm_param(X, "echelle")
 X_train_ech = normalisation(X_train, loc_echelle, scale_echelle)

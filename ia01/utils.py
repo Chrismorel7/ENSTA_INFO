@@ -110,7 +110,7 @@ def variance(x: list[float]) -> float:
         Variance
     """
     x_moy = moyenne(x)
-    return moyenne([(xi - x_moy) ** 2 for xi in x]))
+    return moyenne([(xi - x_moy) ** 2 for xi in x])
 
 
 def ecart_type(x: list[float]) -> float:
